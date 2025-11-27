@@ -9,6 +9,13 @@ An intelligent, production-ready movie recommendation platform powered by advanc
 
 ![ZeeMovies Banner](https://img.shields.io/badge/ZeeMovies-AI%20Powered-blueviolet?style=for-the-badge)
 
+<img width="1139" height="1140" alt="image" src="https://github.com/user-attachments/assets/a4092a58-96d6-4f00-94e3-d955fe7f2160" />
+
+<img width="2745" height="1260" alt="image" src="https://github.com/user-attachments/assets/11d26129-a0e9-4cf7-9fba-d877975a655c" />
+<img width="2797" height="1433" alt="image" src="https://github.com/user-attachments/assets/d99092b3-473b-4b59-a786-92330d3cd81d" />
+<img width="2588" height="1425" alt="image" src="https://github.com/user-attachments/assets/aa45c6bb-51ff-4a50-b4d7-c57989a8ec41" />
+<img width="994" height="1281" alt="image" src="https://github.com/user-attachments/assets/9b111a4a-4e5d-4c97-9d05-b721260572d6" />
+
 ## 🌟 Features
 
 ### 🤖 AI-Powered Recommendations

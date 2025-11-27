@@ -1,0 +1,1610 @@
+In [1]:
+# from google.colab import drive
+# drive.mount('/content/drive')
+In [145]:
+# !pip install skimpy
+In [146]:
+# pip install cmfrec
+In [4]:
+iimmppoorrtt ccmmffrreecc
+In [5]:
+iimmppoorrtt ppaannddaass aass ppdd
+iimmppoorrtt nnuummppyy aass nnpp
+iimmppoorrtt wwaarrnniinnggss
+warnings.filterwarnings("ignore")
+In [6]:
+iimmppoorrtt mmaattpplloottlliibb..ppyypplloott aass pplltt
+iimmppoorrtt sseeaabboorrnn aass ssnnss
+In [7]:
+# datasets
+ratings = pd.read_csv('/content/drive/MyDrive/Scaler/datasets/zee rat.csv')
+users = pd.read_csv('/content/drive/MyDrive/Scaler/datasets/zee user.csv')
+movies = pd.read_csv('/content/drive/MyDrive/Scaler/datasets/zee movie.csv',encoding='ISO
+-8859-1')
+In [8]:
+# cleaning column names
+ffrroomm sskkiimmppyy iimmppoorrtt clean_columns
+movies = clean_columns(movies, case = 'snake')
+ratings = clean_columns(ratings, case = 'snake')
+users = clean_columns(users, case = 'snake')
+3 column names have been cleaned
+4 column names have been cleaned
+5 column names have been cleaned
+In [9]:
+# finding shapes
+ratings.shape,movies.shape,users.shape
+Out[9]:
+((1000209, 4), (3883, 3), (6040, 5))
+In [10]:
+ratings.dropna(inplace=True)
+ratings.isnull().sum()
+Out[10]:
+user_id 0
+movie_id 0
+rating 0
+timestamp 0
+dtype: int64
+In [11]:
+# converting timestamps to datetime format
+ffrroomm ddaatteettiimmee iimmppoorrtt datetime
+ratings['date'] = [datetime.fromtimestamp(i).strftime('%%dd-%m-%Y') ffoorr i iinn ratings.times
+tamp]
+ratings['hours'] = ratings['timestamp'].apply(llaammbbddaa x: datetime.fromtimestamp(x).hour)
+In [12]:
+ratings['date'] = ratings['date'].astype(np.datetime64)
+In [13]:
+# finding nuniques()
+pprriinntt('_'*40)
+pprriinntt('RATINGS NUNIQUES','\\nn')
+ffoorr i iinn ratings:
+pprriinntt(i ,':',ratings[i].nunique())
+pprriinntt('_'*40)
+pprriinntt('MOVIES NUNIQUES','\\nn')
+ffoorr i iinn movies:
+pprriinntt(i ,':',movies[i].nunique())
+pprriinntt('_'*40)
+pprriinntt('USERS NUNIQUES','\\nn')
+ffoorr i iinn users:
+pprriinntt(i ,':',users[i].nunique())
+pprriinntt('_'*40)
+________________________________________
+RATINGS NUNIQUES
+user_id : 6040
+movie_id : 3706
+rating : 5
+timestamp : 458455
+date : 1040
+hours : 24
+________________________________________
+MOVIES NUNIQUES
+movie_id : 3883
+title : 3883
+genres : 301
+________________________________________
+USERS NUNIQUES
+user_id : 6040
+gender : 2
+age : 7
+age : 7
+occupation : 21
+zip_code : 3439
+________________________________________
+In [14]:
+# finding missing values
+ratings.isnull().sum(), movies.isnull().sum(), users.isnull().sum()
+Out[14]:
+(user_id 0
+movie_id 0
+rating 0
+timestamp 0
+date 0
+hours 0
+dtype: int64,
+movie_id 0
+title 0
+genres 0
+dtype: int64,
+user_id 0
+gender 0
+age 0
+occupation 0
+zip_code 0
+dtype: int64)
+NNoo mmiissssiinngg vvaalluueess ffoouunndd iinn aallll tthhrreeee ddaattaasseettss
+In [15]:
+# finding duplicates
+ratings.duplicated().sum(),movies.duplicated().sum(),users.duplicated().sum()
+Out[15]:
+(0, 0, 0)
+rraattiinnggss ddaattaasseett hhaass 2244 dduupplliiccaattee rroowwss
+In [16]:
+# removing duplicates
+ratings.drop_duplicates(inplace=True)
+ratings.duplicated().sum()
+Out[16]:
+0
+DDEESSCCRRIIBBEE AANNDD IINNFFOO
+In [17]:
+pprriinntt('RATINGS INFO AND DESCRIBE','\\nn')
+pd.options.display.float_format='{:.2f}'.format
+ratings.describe(),ratings.info()
+RATINGS INFO AND DESCRIBE
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 1000209 entries, 0 to 1000208
+Data columns (total 6 columns):
+Data columns (total 6 columns):
+# Column Non-Null Count Dtype
+--- ------ -------------- -----
+0 user_id 1000209 non-null int64
+1 movie_id 1000209 non-null int64
+2 rating 1000209 non-null int64
+3 timestamp 1000209 non-null int64
+4 date 1000209 non-null datetime64[ns]
+5 hours 1000209 non-null int64
+dtypes: datetime64[ns](1), int64(5)
+memory usage: 53.4 MB
+Out[17]:
+( user_id movie_id rating timestamp hours
+count 1000209.00 1000209.00 1000209.00 1000209.00 1000209.00
+mean 3024.51 1865.54 3.58 972243695.40 11.92
+std 1728.41 1096.04 1.12 12152558.94 7.89
+min 1.00 1.00 1.00 956703932.00 0.00
+25% 1506.00 1030.00 3.00 965302637.00 4.00
+50% 3070.00 1835.00 4.00 973018006.00 14.00
+75% 4476.00 2770.00 4.00 975220939.00 19.00
+max 6040.00 3952.00 5.00 1046454590.00 23.00,
+None)
+In [18]:
+ratings.describe(include = np.number, percentiles=[.10,.25,.75,.90,.95, .99]).round(2).T
+.astype(int)
+Out[18]:
+ccoouunntt mmeeaann ssttdd mmiinn 1100%% 2255%% 5500%% 7755%% 9900%% 9955%%
+uusseerr__iidd 1000209 3024 1728 1 669 1506 3070 4476 5443 5740
+mmoovviiee__iidd 1000209 1865 1096 1 357 1030 1835 2770 3430 3675
+rraattiinngg 1000209 3 1 1 2 3 4 4 5 5
+ttiimmeessttaammpp 1000209 972243695 12152558 956703932 960681570 965302637 973018006 975220939 978133376 993074152 1029360403
+hhoouurrss 1000209 11 7 0 1 4 14 19 22 23
+In [19]:
+pprriinntt('MOVIES INFO AND DESCRIBE','\\nn')
+pd.options.display.float_format='{:.2f}'.format
+movies.describe(),movies.info()
+MOVIES INFO AND DESCRIBE
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 3883 entries, 0 to 3882
+Data columns (total 3 columns):
+# Column Non-Null Count Dtype
+--- ------ -------------- -----
+0 movie_id 3883 non-null int64
+1 title 3883 non-null object
+2 genres 3883 non-null object
+dtypes: int64(1), object(2)
+memory usage: 91.1+ KB
+Out[19]:
+( movie_id
+count 3883.00
+mean 1986.05
+std 1146.78
+min 1.00
+25% 982.50
+25% 982.50
+50% 2010.00
+75% 2980.50
+max 3952.00,
+None)
+In [20]:
+movies.describe(include=object)
+Out[20]:
+ttiittllee ggeennrreess
+ccoouunntt 3883 3883
+uunniiqquuee 3883 301
+ttoopp Toy Story (1995) Drama
+ffrreeqq 1 843
+In [21]:
+movies.describe(include = np.number, percentiles=[.10,.25,.75,.90,.95, .99]).round(2).T.
+astype(int)
+Out[21]:
+ccoouunntt mmeeaann ssttdd mmiinn 1100%% 2255%% 5500%% 7755%% 9900%% 9955%% 9999%% mmaaxx
+mmoovviiee__iidd 3883 1986 1146 1 392 982 2010 2980 3562 3756 3913 3952
+In [22]:
+pprriinntt('USERS INFO AND DESCRIBE','\\nn')
+pd.options.display.float_format='{:.2f}'.format
+users.describe(),users.info()
+USERS INFO AND DESCRIBE
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 6040 entries, 0 to 6039
+Data columns (total 5 columns):
+# Column Non-Null Count Dtype
+--- ------ -------------- -----
+0 user_id 6040 non-null int64
+1 gender 6040 non-null object
+2 age 6040 non-null int64
+3 occupation 6040 non-null int64
+4 zip_code 6040 non-null object
+dtypes: int64(3), object(2)
+memory usage: 236.1+ KB
+Out[22]:
+( user_id age occupation
+count 6040.00 6040.00 6040.00
+mean 3020.50 30.64 8.15
+std 1743.74 12.90 6.33
+min 1.00 1.00 0.00
+25% 1510.75 25.00 3.00
+50% 3020.50 25.00 7.00
+75% 4530.25 35.00 14.00
+max 6040.00 56.00 20.00,
+None)
+In [23]:
+users.describe(include=object)
+users.describe(include=object)
+Out[23]:
+ggeennddeerr zziipp__ccooddee
+ccoouunntt 6040 6040
+uunniiqquuee 2 3439
+ttoopp M 48104
+ffrreeqq 4331 19
+In [24]:
+users.describe(include = np.number, percentiles=[.10,.25,.75,.90,.95, .99]).round(2).T.a
+stype(int)
+Out[24]:
+ccoouunntt mmeeaann ssttdd mmiinn 1100%% 2255%% 5500%% 7755%% 9900%% 9955%% 9999%% mmaaxx
+uusseerr__iidd 6040 3020 1743 1 604 1510 3020 4530 5436 5738 5979 6040
+aaggee 6040 30 12 1 18 25 25 35 50 56 56 56
+ooccccuuppaattiioonn 6040 8 6 0 0 3 7 14 17 19 20 20
+DDEESSCCRRIIBBEE AANNDD IINNFFOO EENNDDSS
+In [25]:
+ratings.head()
+Out[25]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss
+00 1 1193 5 978300760 2000-12-31 22
+11 1 661 3 978302109 2000-12-31 22
+22 1 914 3 978301968 2000-12-31 22
+33 1 3408 4 978300275 2000-12-31 22
+44 1 2355 5 978824291 2001-06-01 23
+In [26]:
+movies.head()
+Out[26]:
+mmoovviiee__iidd ttiittllee ggeennrreess
+00 1 Toy Story (1995) Animation|Children's|Comedy
+11 2 Jumanji (1995) Adventure|Children's|Fantasy
+22 3 Grumpier Old Men (1995) Comedy|Romance
+33 4 Waiting to Exhale (1995) Comedy|Drama
+Father of the Bride Part II
+44 5 Comedy
+(1995)
+In [27]:
+users.head()
+Out[27]:
+uusseerr__iidd ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee
+00 1 F 1 10 48067
+11 2 M 56 16 70072
+22 3 M 25 15 55117
+33 4 M 45 7 2460
+44 5 M 25 20 55455
+In [28]:
+# merging all three datasets
+df = ratings.merge(users,on='user_id', how='inner')
+df = df.merge(movies,on='movie_id', how='inner')
+In [29]:
+# creating new feature release year
+df['release_year'] = df['title'].str.extract(r'([\d]+)')
+df['title'] = df['title'].replace('[0-9]','',regex=True).str.strip('()')
+In [30]:
+df['release_year'] = df['release_year'].astype(int)
+In [31]:
+df = df[df['release_year'].between(df['release_year'].quantile(.04),
+df['release_year'].quantile(.999),
+inclusive=True)]
+In [32]:
+df['title'] = df['title'].str.lstrip('(')
+df['title'] = df['title'].str.lstrip(')')
+In [33]:
+df.shape
+Out[33]:
+(959268, 13)
+In [34]:
+df.head()
+Out[34]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess rreelleeaassee__yyeeaarr
+One Flew
+2000- Over the
+00 1 1193 5 978300760 22 F 1 10 48067 Drama 1975
+12-31 Cuckoo's
+Nest
+One Flew
+2000- Over the
+11 2 1193 5 978298413 21 M 56 16 70072 Drama 1975
+12-31 Cuckoo's
+Nest
+One Flew
+2000- Over the
+22 12 1193 4 978220179 23 M 25 12 32793 Drama 1975
+12-30 Cuckoo's
+Nest
+One Flew
+One Flew
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess rreelleeaassee__yyeeaarr
+2000- Over the
+33 15 1193 4 978199279 18 M 25 7 22903 Drama 1975
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+44 17 1193 5 978158471 6 M 50 1 95350 Drama 1975
+12-30 Cuckoo's
+Nest
+In [35]:
+df = df[df['age'].between(df['age'].quantile(.03),
+df['age'].quantile(1),
+inclusive=True)]
+In [36]:
+df.head()
+Out[36]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess rreelleeaassee__yyeeaarr
+One Flew
+2000- Over the
+11 2 1193 5 978298413 21 M 56 16 70072 Drama 1975
+12-31 Cuckoo's
+Nest
+One Flew
+2000- Over the
+22 12 1193 4 978220179 23 M 25 12 32793 Drama 1975
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+33 15 1193 4 978199279 18 M 25 7 22903 Drama 1975
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+44 17 1193 5 978158471 6 M 50 1 95350 Drama 1975
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+55 18 1193 4 978156168 6 F 18 3 95825 Drama 1975
+12-30 Cuckoo's
+Nest
+AApprriioorrii AAllggoorriitthhmm
+RReeccoommmmeennddaattiioonnss aaccccoorrddiinngg ttoo mmoovviiee ttiittllee
+In [37]:
+df
+Out[37]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess
+One Flew
+2000- Over the
+11 2 1193 5 978298413 21 M 56 16 70072 Drama
+12-31 Cuckoo's
+Nest
+One Flew
+2000- Over the
+22 12 1193 4 978220179 23 M 25 12 32793 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+33 15 1193 4 978199279 18 M 25 7 22903 Drama
+12-30 Cuckoo's
+33 15 1193 4 978199279 18 M 25 7 22903 Drama
+12-30 Cuckoo's
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess
+Nest
+One Flew
+2000- Over the
+44 17 1193 5 978158471 6 M 50 1 95350 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+55 18 1193 4 978156168 6 F 18 3 95825 Drama
+12-30 Cuckoo's
+Nest
+...... ... ... ... ... ... ... ... ... ... ... ...
+2000-
+11000000220044 5949 2198 5 958846401 18 M 18 17 47901 Modulations Documentary
+05-20
+2000- Broken
+11000000220055 5675 2703 3 976029116 15 M 35 14 30030 Drama
+05-12 Vessels
+2000-
+11000000220066 5780 2845 1 958153068 17 M 18 17 92886 White Boys Drama
+12-05
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Comedy|Drama|Western
+08-05 Indian
+Five Wives,
+2000- Three
+11000000220088 5938 2909 4 957273353 13 M 25 1 35401 Documentary
+02-05 Secretaries
+and Me
+933429 rows × 13 columns
+In [38]:
+df1 = df.sample(700000)
+In [39]:
+df1['user_id'] = df1.user_id.astype(object)
+df1['movie_id'] = df1.movie_id.astype(object)
+df1.info()
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 700000 entries, 450840 to 829031
+Data columns (total 13 columns):
+# Column Non-Null Count Dtype
+--- ------ -------------- -----
+0 user_id 700000 non-null object
+1 movie_id 700000 non-null object
+2 rating 700000 non-null int64
+3 timestamp 700000 non-null int64
+4 date 700000 non-null datetime64[ns]
+5 hours 700000 non-null int64
+6 gender 700000 non-null object
+7 age 700000 non-null int64
+8 occupation 700000 non-null int64
+9 zip_code 700000 non-null object
+10 title 700000 non-null object
+11 genres 700000 non-null object
+12 release_year 700000 non-null int64
+dtypes: datetime64[ns](1), int64(6), object(6)
+memory usage: 74.8+ MB
+In [40]:
+data = df1.groupby(['user_id','title'])['movie_id'].sum().unstack().reset_index().fillna
+(0).set_index('user_id')
+In [41]:
+data[data.index == 6036].sum(axis=1)
+Out[41]:
+user_id
+6036 1186000
+dtype: int64
+In [42]:
+data = (data>0).astype(int)
+In [43]:
+data[data.index == 6036].sum(axis=1)
+Out[43]:
+user_id
+6036 635
+dtype: int64
+In [44]:
+data.head()
+Out[44]:
+''TTiill AA AAbbbbootttt aanndd YYoouunngg
+......AAnndd :: AA AAbboommiinnaabbllee AAbboouutt YYoouunngg YYoouunngg
+''NNiigghhtt TThheerree ''bbuurrbbss,, CChheeff CCoosstteelllloo AAbboouutt PPooiissoonneerr''ss
+ttiittllee JJuussttiiccee SSppaaccee SSnnoowwmmaann,, LLaasstt ...... SShheerrlloocckk
+MMootthheerr WWaass TThhee iinn MMeeeett AAddaamm HHaannddbbooookk,,
+ffoorr AAllll OOddyysssseeyy TThhee NNiigghhtt...... HHoollmmeess IInnnnoocceenntt
+YYoouu LLoovvee FFrraannkkeennsstteeiinn TThhee
+uusseerr__iidd
+22 0 0 0 0 0 0 0 0 0 0 ... 0 0
+33 0 0 0 0 0 0 0 0 0 0 ... 0 0
+44 0 0 0 0 0 0 0 0 0 0 ... 0 0
+55 0 0 0 0 0 0 0 0 0 0 ... 0 0
+66 0 0 0 0 0 0 0 0 0 0 ... 0 0
+5 rows × 3466 columns
+In [45]:
+ffrroomm mmllxxtteenndd..ffrreeqquueenntt__ppaatttteerrnnss iimmppoorrtt apriori
+In [46]:
+itemset = apriori(data,min_support=.12,use_colnames=True).sort_values('support',ascendin
+g=False).reset_index()
+In [47]:
+itemset.shape
+Out[47]:
+(578, 3)
+In [48]:
+itemset.loc[itemset['itemsets'].apply(llaammbbddaa x: len(x)) >= 2]
+Out[48]:
+iinnddeexx ssuuppppoorrtt iitteemmsseettss
+3399 558 0.22 (Star Wars: Episode V - The Empire Strikes Bac...
+5566 565 0.20 (Star Wars: Episode V - The Empire Strikes Bac...
+5566 565 0.20 (Star Wars: Episode V - The Empire Strikes Bac...
+iinnddeexx ssuuppppoorrtt iitteemmsseettss
+6622 559 0.20 (Star Wars: Episode IV - A New Hope , Star War...
+6655 513 0.19 (Star Wars: Episode V - The Empire Strikes Bac...
+7755 430 0.18 (Men in Black , Jurassic Park )
+...... ... ... ...
+557733 507 0.12 (Shakespeare in Love , Raiders of the Lost Ark )
+557744 449 0.12 (L.A. Confidential , Shakespeare in Love )
+557755 528 0.12 (Saving Private Ryan , Toy Story )
+557766 467 0.12 (Matrix, The , Speed )
+(Star Wars: Episode I - The Phantom Menace ,
+557777 491 0.12
+P...
+361 rows × 3 columns
+In [49]:
+ffrroomm mmllxxtteenndd..ffrreeqquueenntt__ppaatttteerrnnss iimmppoorrtt association_rules
+rules = association_rules(itemset,metric='lift',min_threshold=1)
+In [50]:
+rules
+Out[50]:
+aanntteecceeddeenntt ccoonnsseeqquueenntt
+aanntteecceeddeennttss ccoonnsseeqquueennttss ssuuppppoorrtt ccoonnffiiddeennccee lliifftt lleevveerraaggee ccoonnvviiccttiioonn
+ssuuppppoorrtt ssuuppppoorrtt
+(Star Wars: Episode V
+(Star Wars: Episode IV
+00 - The Empire Strikes 0.37 0.38 0.22 0.59 1.58 0.08 1.53
+- A New Hope )
+Back )
+(Star Wars: Episode V
+(Star Wars: Episode IV
+11 - The Empire Strikes 0.38 0.37 0.22 0.58 1.58 0.08 1.51
+- A New Hope )
+Back )
+(Star Wars: Episode V
+(Star Wars: Episode VI
+22 - The Empire Strikes 0.37 0.36 0.20 0.55 1.52 0.07 1.42
+- Return of the Jedi )
+Back )
+(Star Wars: Episode V
+(Star Wars: Episode VI
+33 - The Empire Strikes 0.36 0.37 0.20 0.56 1.52 0.07 1.44
+- Return of the Jedi )
+Back )
+(Star Wars: Episode IV (Star Wars: Episode VI
+44 0.38 0.36 0.20 0.52 1.44 0.06 1.33
+- A New Hope ) - Return of the Jedi )
+...... ... ... ... ... ... ... ... ... ...
+772255 (Toy Story ) (Saving Private Ryan ) 0.26 0.33 0.12 0.47 1.40 0.03 1.25
+772266 (Matrix, The ) (Speed ) 0.32 0.21 0.12 0.37 1.81 0.05 1.27
+772277 (Speed ) (Matrix, The ) 0.21 0.32 0.12 0.58 1.81 0.05 1.63
+(Star Wars: Episode I
+772288 - The Phantom (Princess Bride, The ) 0.28 0.29 0.12 0.43 1.46 0.04 1.24
+Menace )
+(Star Wars: Episode I -
+772299 (Princess Bride, The ) The Phantom Menace 0.29 0.28 0.12 0.41 1.46 0.04 1.22
+)
+730 rows × 9 columns
+In [51]:
+rules.antecedents.value_counts()
+Out[51]:
+Out[51]:
+(Star Wars: Episode V - The Empire Strikes Back )
+44
+(Star Wars: Episode IV - A New Hope )
+42
+(Star Wars: Episode VI - Return of the Jedi )
+37
+(American Beauty )
+36
+(Raiders of the Lost Ark )
+32
+(Matrix, The )
+32
+(Silence of the Lambs, The )
+28
+(Back to the Future )
+27
+(Saving Private Ryan )
+27
+(Fargo )
+25
+(Men in Black )
+24
+(Jurassic Park )
+24
+(Braveheart )
+21
+(Princess Bride, The )
+19
+(Groundhog Day )
+19
+(Terminator, The )
+19
+(Sixth Sense, The )
+19
+(Pulp Fiction )
+18
+(Shawshank Redemption, The )
+17
+(L.A. Confidential )
+16
+(E.T. the Extra-Terrestrial )
+15
+(Shakespeare in Love )
+15
+(Total Recall )
+14
+(Star Wars: Episode I - The Phantom Menace )
+14
+(Fugitive, The )
+13
+(Forrest Gump )
+12
+(Alien )
+11
+(Schindler's List )
+11
+(Ghostbusters )
+9
+(Godfather, The )
+9
+(Toy Story )
+9
+(Aliens )
+8
+(Being John Malkovich )
+8
+(Blade Runner )
+7
+(Die Hard )
+6
+(GoodFellas )
+(GoodFellas )
+5
+(Usual Suspects, The )
+5
+(Indiana Jones and the Last Crusade )
+4
+(Who Framed Roger Rabbit? )
+3
+(Abyss, The )
+3
+(Jaws )
+2
+(Star Wars: Episode V - The Empire Strikes Back , Star Wars: Episode IV - A New Hope )
+2
+(Stand by Me )
+2
+(Wizard of Oz, The )
+2
+(Hunt for Red October, The )
+2
+(: A Space Odyssey )
+2
+(Election )
+1
+(Lethal Weapon )
+1
+(Mission: Impossible )
+1
+(Babe )
+1
+(Star Wars: Episode IV - A New Hope , Star Wars: Episode VI - Return of the Jedi )
+1
+(Star Wars: Episode IV - A New Hope , Raiders of the Lost Ark )
+1
+(Star Wars: Episode V - The Empire Strikes Back , Raiders of the Lost Ark )
+1
+(Star Wars: Episode V - The Empire Strikes Back , Star Wars: Episode VI - Return of the J
+edi ) 1
+(Godfather: Part II, The )
+1
+(Gladiator )
+1
+(Speed )
+1
+Name: antecedents, dtype: int64
+In [52]:
+rules.loc[rules.antecedents == rules.antecedents.iloc[15]].sort_values(by='lift',ascendi
+ng=False)
+Out[52]:
+aanntteecceeddeenntt ccoonnsseeqquueenntt
+aanntteecceeddeennttss ccoonnsseeqquueennttss ssuuppppoorrtt ccoonnffiiddeennccee lliifftt lleevveerraaggee ccoonnvviiccttiioonn
+ssuuppppoorrtt ssuuppppoorrtt
+(Back to the
+662277 (Aliens ) 0.32 0.23 0.12 0.38 1.67 0.05 1.24
+Future )
+(Back to the
+558899 (Blade Runner ) 0.32 0.23 0.12 0.38 1.64 0.05 1.24
+Future )
+(Back to the
+224499 (Terminator, The ) 0.32 0.27 0.14 0.43 1.63 0.05 1.29
+Future )
+(Back to the
+117777 (E.T. the Extra-Terrestrial ) 0.32 0.28 0.15 0.46 1.62 0.06 1.32
+Future )
+(Back to the
+224411 (Ghostbusters ) 0.32 0.27 0.14 0.43 1.62 0.05 1.29
+Future )
+(Back to the
+449922 (Alien ) 0.32 0.25 0.13 0.39 1.56 0.05 1.23
+Future )
+(Back to the
+119933 (Princess Bride, The ) 0.32 0.29 0.15 0.45 1.54 0.05 1.29
+Future )
+Future )
+aanntteecceeddeenntt ccoonnsseeqquueenntt
+aa(Bnnttaeeccckee tddoee ntnhttses (Star Wars: Epcicsooonndsseee Vqqu u-ee Tnnhttsse ssuuppppoorrtt ccoonnffiiddeennccee lliifftt lleevveerraaggee ccoonnvviiccttiioonn
+1155 ssuupppp0oo.3rr2tt ssuupppp0oo.3rr7tt 0.18 0.55 1.50 0.06 1.41
+Future ) Empire Strikes Back )
+(Back to the
+665566 (Total Recall ) 0.32 0.25 0.12 0.38 1.48 0.04 1.20
+Future )
+(Back to the
+559955 (Toy Story ) 0.32 0.26 0.12 0.38 1.48 0.04 1.20
+Future )
+(Back to the
+114477 (Raiders of the Lost Ark ) 0.32 0.32 0.15 0.47 1.47 0.05 1.28
+Future )
+(Back to the
+115555 (Men in Black ) 0.32 0.32 0.15 0.46 1.46 0.05 1.27
+Future )
+(Back to the (Star Wars: Episode VI -
+3399 0.32 0.36 0.17 0.53 1.46 0.05 1.35
+Future ) Return of the Jedi )
+(Back to the
+336633 (Groundhog Day ) 0.32 0.29 0.13 0.41 1.45 0.04 1.22
+Future )
+(Back to the (Star Wars: Episode IV - A
+2277 0.32 0.38 0.18 0.54 1.44 0.05 1.36
+Future ) New Hope )
+(Back to the
+552299 (Forrest Gump ) 0.32 0.27 0.13 0.39 1.42 0.04 1.19
+Future )
+(Back to the (Star Wars: Episode I - The
+448899 0.32 0.28 0.13 0.39 1.41 0.04 1.19
+Future ) Phantom Menace )
+(Back to the
+119955 (Matrix, The ) 0.32 0.32 0.15 0.45 1.40 0.04 1.24
+Future )
+(Back to the
+118822 (Jurassic Park ) 0.32 0.34 0.15 0.46 1.36 0.04 1.22
+Future )
+(Back to the (Shawshank Redemption,
+669922 0.32 0.29 0.12 0.37 1.31 0.03 1.14
+Future ) The )
+(Back to the
+227799 (Silence of the Lambs, The ) 0.32 0.33 0.14 0.43 1.30 0.03 1.17
+Future )
+(Back to the
+661155 (Shakespeare in Love ) 0.32 0.30 0.12 0.38 1.28 0.03 1.13
+Future )
+(Back to the
+445511 (Fargo ) 0.32 0.32 0.13 0.40 1.26 0.03 1.14
+Future )
+(Back to the
+335555 (Saving Private Ryan ) 0.32 0.33 0.13 0.42 1.25 0.03 1.14
+Future )
+(Back to the
+663377 (Sixth Sense, The ) 0.32 0.30 0.12 0.38 1.25 0.02 1.12
+Future )
+(Back to the
+555577 (Braveheart ) 0.32 0.31 0.12 0.39 1.23 0.02 1.12
+Future )
+(Back to the
+112299 (American Beauty ) 0.32 0.43 0.15 0.47 1.09 0.01 1.07
+Future )
+RReeccoommmmeennddaattiioonnss aaccccoorrddiinngg ttoo mmoovviiee ggeennrreess
+In [53]:
+# Exploding feature genres
+df2 = df.copy()
+df2['genres'] = df2['genres'].str.split('|')
+df2 = df2.explode('genres')
+df2
+Out[53]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess rreelleeaassee__yyeeaarr
+One Flew
+2000- Over the
+2000- Over the
+11 uusseerr__iidd2 mmoovvii1ee1__9iidd3 rraattiinngg5 tt9iimm78ee2ss9tt8aa4mm1pp3 ddaattee hhoouu2rrss1 ggeennddeeMrr aagg5ee6 ooccccuuppaattiioo1nn6 zziipp__7cc0oo0dd7e2e ttiittllee ggDeernnarrmeesas rreelleeaassee__yyeeaarr
+12-31 Cuckoo's
+Nest
+One Flew
+2000- Over the
+22 12 1193 4 978220179 23 M 25 12 32793 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+33 15 1193 4 978199279 18 M 25 7 22903 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+44 17 1193 5 978158471 6 M 50 1 95350 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+55 18 1193 4 978156168 6 F 18 3 95825 Drama
+12-30 Cuckoo's
+Nest
+...... ... ... ... ... ... ... ... ... ... ... ... ...
+2000-
+11000000220066 5780 2845 1 958153068 17 M 18 17 92886 White Boys Drama
+12-05
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Comedy
+08-05 Indian
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Drama
+08-05 Indian
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Western
+08-05 Indian
+Five Wives,
+2000- Three
+11000000220088 5938 2909 4 957273353 13 M 25 1 35401 Documentary
+02-05 Secretaries
+and Me
+1958837 rows × 13 columns
+In [54]:
+df3 = df2.copy().sample(1000000)
+In [55]:
+df2
+Out[55]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess rreelleeaassee__yyeeaarr
+One Flew
+2000- Over the
+11 2 1193 5 978298413 21 M 56 16 70072 Drama
+12-31 Cuckoo's
+Nest
+One Flew
+2000- Over the
+22 12 1193 4 978220179 23 M 25 12 32793 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+33 15 1193 4 978199279 18 M 25 7 22903 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+44 17 1193 5 978158471 6 M 50 1 95350 Drama
+12-30 Cuckoo's
+Nest
+One Flew
+2000- Over the
+2000- Over the
+55 uusseerr__1iidd8 mmoovvii1ee1__9iidd3 rraattiinngg4 tt9iimm78ee1ss5tt6aa1mm6pp8 ddaattee hhoouurrs6s ggeennddeeFrr aagg1ee8 ooccccuuppaattiioonn3 zziipp__9cc5oo8dd2e5e ttiittllee ggDeernnarrmeesas rreelleeaassee__yyeeaarr
+12-30 Cuckoo's
+Nest
+...... ... ... ... ... ... ... ... ... ... ... ... ...
+2000-
+11000000220066 5780 2845 1 958153068 17 M 18 17 92886 White Boys Drama
+12-05
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Comedy
+08-05 Indian
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Drama
+08-05 Indian
+2000- One Little
+11000000220077 5851 3607 5 957756608 3 F 18 20 55410 Western
+08-05 Indian
+Five Wives,
+2000- Three
+11000000220088 5938 2909 4 957273353 13 M 25 1 35401 Documentary
+02-05 Secretaries
+and Me
+1958837 rows × 13 columns
+In [56]:
+df2 = df2.sample(700000)
+In [57]:
+# from tensorflow.keras import backend as K
+# K.clear_session()
+In [58]:
+data = df2.groupby(['user_id','genres'])['movie_id'].sum().unstack().reset_index().filln
+a(0).set_index('user_id')
+data = (data>0).astype(int)
+In [59]:
+data.head()
+Out[59]:
+FFiillmm--
+ggeennrreess AAccttiioonn AAddvveennttuurree AAnniimmaattiioonn CChhiillddrreenn''ss CCoommeeddyy CCrriimmee DDooccuummeennttaarryy DDrraammaa FFaannttaassyy HHoorrrroorr MMuussiiccaall MMyysstteerryy
+NNooiirr
+uusseerr__iidd
+22 1 1 0 0 1 1 0 1 0 1 0 0
+33 1 1 0 1 1 0 0 1 1 0 0 0
+44 1 1 0 1 0 0 0 1 0 0 1 0
+55 1 1 1 1 1 1 1 1 0 1 1 1
+66 1 1 1 1 1 1 0 1 1 0 0 1
+In [60]:
+ffrroomm mmllxxtteenndd..ffrreeqquueenntt__ppaatttteerrnnss iimmppoorrtt apriori
+itemset = apriori(data,min_support=.5,use_colnames=True).sort_values('support',ascending
+=False).reset_index()
+In [61]:
+itemset.shape
+Out[61]:
+(2253, 3)
+(2253, 3)
+In [62]:
+itemset.loc[itemset['itemsets'].apply(llaammbbddaa x: len(x)) >= 2]
+Out[62]:
+iinnddeexx ssuuppppoorrtt iitteemmsseettss
+22 59 0.97 (Comedy, Drama)
+44 20 0.94 (Drama, Action)
+55 18 0.93 (Comedy, Action)
+77 137 0.92 (Comedy, Drama, Action)
+88 83 0.92 (Thriller, Drama)
+...... ... ... ...
+22224488 1539 0.50 (Horror, Sci-Fi, Crime, War, Romance)
+22224499 1999 0.50 (Horror, Sci-Fi, Drama, Crime, War, Romance)
+22225500 1985 0.50 (Comedy, Sci-Fi, Drama, War, Thriller, Fantasy)
+22225511 1383 0.50 (Sci-Fi, Drama, War, Adventure, Fantasy)
+22225522 1478 0.50 (Comedy, Crime, War, Mystery, Romance)
+2238 rows × 3 columns
+In [63]:
+ffrroomm mmllxxtteenndd..ffrreeqquueenntt__ppaatttteerrnnss iimmppoorrtt association_rules
+rules = association_rules(itemset,metric='lift',min_threshold=1)
+rules.head()
+Out[63]:
+aanntteecceeddeennttss ccoonnsseeqquueennttss aanntteecceeddeenntt ssuuppppoorrtt ccoonnsseeqquueenntt ssuuppppoorrtt ssuuppppoorrtt ccoonnffiiddeennccee lliifftt lleevveerraaggee ccoonnvviiccttiioonn
+00 (Comedy) (Drama) 0.98 0.99 0.97 0.99 1.00 0.00 1.06
+11 (Drama) (Comedy) 0.99 0.98 0.97 0.98 1.00 0.00 1.03
+22 (Drama) (Action) 0.99 0.95 0.94 0.95 1.00 0.00 1.04
+33 (Action) (Drama) 0.95 0.99 0.94 0.99 1.00 0.00 1.21
+44 (Comedy) (Action) 0.98 0.95 0.93 0.95 1.00 0.00 1.05
+In [64]:
+rules.antecedents.value_counts()
+Out[64]:
+(Drama) 1120
+(Comedy) 1110
+(Action) 1096
+(Thriller) 1064
+(Romance) 1006
+...
+(Action, Comedy, Drama, Musical, Adventure, Thriller) 1
+(Action, Comedy, Drama, Musical, Romance, Thriller) 1
+(Action, Comedy, Drama, Musical, Adventure, Romance) 1
+(Action, Comedy, Musical, Adventure, Romance, Thriller) 1
+(Sci-Fi, War, Fantasy, Adventure) 1
+Name: antecedents, Length: 2173, dtype: int64
+In [65]:
+rules.loc[rules.antecedents == rules.antecedents.iloc[15]].sort_values(by='lift',ascendi
+rules.loc[rules.antecedents == rules.antecedents.iloc[15]].sort_values(by='lift',ascendi
+ng=False)
+Out[65]:
+aanntteecceeddeenntt ccoonnsseeqquueenntt
+aanntteecceeddeennttss ccoonnsseeqquueennttss ssuuppppoorrtt ccoonnffiiddeennccee lliifftt lleevveerraaggee ccoonnvviiccttiioonn
+ssuuppppoorrtt ssuuppppoorrtt
+(Horror, Action, Comedy,
+8822441199 (Thriller) 0.93 0.51 0.51 0.55 1.07 0.03 1.08
+Sci-Fi, Drama, Crime,...
+(Horror, Action, Sci-Fi,
+7755445577 (Thriller) 0.93 0.51 0.51 0.55 1.07 0.03 1.08
+Drama, Crime, War)
+(Horror, Action, Comedy,
+8811991199 (Thriller) 0.93 0.51 0.51 0.55 1.07 0.03 1.08
+Sci-Fi, Crime, War)
+(Horror, Action, Comedy,
+8888337733 (Thriller) 0.93 0.51 0.50 0.54 1.07 0.03 1.08
+Drama, Crime, War, Ad...
+(Horror, Action, Sci-Fi,
+7744662211 (Thriller) 0.93 0.51 0.51 0.55 1.07 0.03 1.08
+Crime, War)
+...... ... ... ... ... ... ... ... ... ...
+115511 (Thriller) (Comedy, Romance) 0.93 0.89 0.83 0.89 1.01 0.01 1.06
+9999 (Thriller) (Romance) 0.93 0.90 0.84 0.91 1.01 0.01 1.07
+2200 (Thriller) (Comedy, Drama) 0.93 0.97 0.90 0.97 1.00 0.00 1.09
+1122 (Thriller) (Drama) 0.93 0.99 0.92 0.99 1.00 0.00 1.19
+1155 (Thriller) (Comedy) 0.93 0.98 0.91 0.98 1.00 0.00 1.05
+1064 rows × 9 columns
+AApprriioorrii AAllggoorriitthhmm EEnnddss
+In [66]:
+df2.head()
+Out[66]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess rreelleeaassee__yyeeaarr
+2000- Superman
+773355000066 4683 2642 1 963676881 16 M 25 0 22101 Action 1983
+07-15 III
+American
+2000-
+774400227711 5734 11 5 976312039 21 F 25 14 10022 President, Comedy 1995
+08-12
+The
+2000-
+557799118888 117 10 4 977501371 16 M 25 17 33314 GoldenEye Thriller 1995
+12-22
+Land
+Before
+2000- Time III:
+999966445577 5795 888 2 958146185 15 M 25 1 92688 Children's 1995
+12-05 The Time
+of the
+Great Gi...
+2000- Leaving
+338844990044 3017 25 4 970507008 17 F 35 9 85255 Romance 1995
+02-10 Las Vegas
+SSeevveerraall ssiimmiillaaiittyy mmeessuurriinngg ffuunnccttiioonnss aanndd ssiimmiillaarriittyy bbaasseedd rreeccoommmmeennddeerr ssyysstteemm ffuunnccttiioonn
+In [67]:
+ddeeff hamming_distance(x,y):
+rreettuurrnn sum(abs(x-y))
+ddeeff euclidian_distance(x,y):
+rreettuurrnn np.sqrt(np.sum((x-y)**2))
+ddeeff cosine_similarity(v1, v2):
+dot_prod = np.dot(v1, v2)
+norm_v1 = np.linalg.norm(v1)
+norm_v2 = np.linalg.norm(v2)
+rreettuurrnn dot_prod / (norm_v1 * norm_v2)
+ddeeff pearson_sim(x,y):
+# Calculate the mean of x and y
+x_mean = np.mean(x)
+y_mean = np.mean(y)
+# Calculate the numerator
+num = np.sum((x - x_mean) * (y - y_mean))
+# Calculate the denominator
+x_denom = np.sqrt(np.sum((x - x_mean)**2))
+y_denom = np.sqrt(np.sum((y - y_mean)**2))
+denom = x_denom * y_denom
+# Calculate the Pearson correlation coefficient
+r = num / denom
+rreettuurrnn r
+ddeeff similarity_based_recsys(m,movies,movie_id,hamming_distance):
+ranks = []
+ffoorr query iinn m.index[:10]:
+ffoorr candidate iinn m.index:
+iiff candidate == query:
+ccoonnttiinnuuee
+ranks.append([query, candidate, hamming_distance(m.loc[query], m.loc[candidate
+])])
+ranks = pd.DataFrame(ranks, columns=['query', 'candidate', 'distance'])
+ranks = ranks.merge(movies[['movie_id', 'title']], left_on='query', right_on='movie_id
+').rename(columns={'title': 'query_tittle'}).drop(columns=['movie_id'])
+ranks = ranks.merge(movies[['movie_id', 'title']], left_on='candidate', right_on='movi
+e_id').rename(columns={'title': 'recommendation_title'}).drop(columns=['movie_id'])
+ranks = ranks.sort_values(by=['query', 'distance'])
+rreettuurrnn ranks
+PPiivvoott ttaabbllee ffoorr iitteemm iitteemm bbaasseedd rreeccoommmmeennddeerr ssyysstteemm
+In [68]:
+m = df2.groupby(['movie_id','genres'])['title'].unique().str[0].unstack().reset_index().
+set_index('movie_id')
+m = ~m.isna()
+m = m.astype(int)
+m.head()
+Out[68]:
+FFiillmm--
+FFiillmm--
+ggeennrreess AAccttiioonn AAddvveennttuurree AAnniimmaattiioonn CChhiillddrreenn''ss CCoommeeddyy CCrriimmee DDooccuummeennttaarryy DDrraammaa FFaannttaassyy FFiillmm-- HHoorrrroorr MMuussiiccaall MMyysstteerryy
+ggeennrreess AAccttiioonn AAddvveennttuurree AAnniimmaattiioonn CChhiillddrreenn''ss CCoommeeddyy CCrriimmee DDooccuummeennttaarryy DDrraammaa FFaannttaassyy NNooiirr HHoorrrroorr MMuussiiccaall MMyysstteerryy
+NNooiirr
+mmoovviiee__iidd
+mmoovviiee__iidd
+11 0 0 1 1 1 0 0 0 0 0 0 0
+22 0 1 0 1 0 0 0 0 1 0 0 0
+33 0 0 0 0 1 0 0 0 0 0 0 0
+44 0 0 0 0 1 0 0 1 0 0 0 0
+55 0 0 0 0 1 0 0 0 0 0 0 0
+IItteemm iitteemm bbaasseedd rreeccoommmmeennddeerr ssyysstteemm uussiinngg ccoossiinnee ssiimmiillaarriittyy
+In [69]:
+similarity_based_recsys(m,movies[['movie_id', 'title']],movies.movie_id,cosine_similarity
+)
+Out[69]:
+qquueerryy ccaannddiiddaattee ddiissttaannccee qquueerryy__ttiittttllee rreeccoommmmeennddaattiioonn__ttiittllee
+3366 1 6 0.00 Toy Story (1995) Heat (1995)
+6633 1 9 0.00 Toy Story (1995) Sudden Death (1995)
+7722 1 10 0.00 Toy Story (1995) GoldenEye (1995)
+111111 1 14 0.00 Toy Story (1995) Nixon (1995)
+112211 1 15 0.00 Toy Story (1995) Cutthroat Island (1995)
+...... ... ... ... ... ...
+88554400 10 990 1.00 GoldenEye (1995) Maximum Risk (1996)
+1122882200 10 1499 1.00 GoldenEye (1995) Anaconda (1997)
+1133225500 10 1552 1.00 GoldenEye (1995) Con Air (1997)
+1144775500 10 1744 1.00 GoldenEye (1995) Firestorm (1998)
+3322445500 10 3755 1.00 GoldenEye (1995) Perfect Storm, The (2000)
+34270 rows × 5 columns
+IItteemm iitteemm bbaasseedd rreeccoommmmeennddeerr ssyysstteemm uussiinngg ppeeaarrssoonn ccoorrrreellaattiioonn ssiimmiillaarriittyy
+In [70]:
+similarity_based_recsys(m,movies[['movie_id', 'title']],movies.movie_id,pearson_sim)
+Out[70]:
+qquueerryy ccaannddiiddaattee ddiissttaannccee qquueerryy__ttiittttllee rreeccoommmmeennddaattiioonn__ttiittllee
+Star Wars: Episode V - The Empire Strikes
+1100220011 1 1196 -0.28 Toy Story (1995)
+Back...
+1100333311 1 1210 -0.28 Toy Story (1995) Star Wars: Episode VI - Return of the Jedi (1983)
+1100884411 1 1264 -0.28 Toy Story (1995) Diva (1981)
+1199668811 1 2322 -0.28 Toy Story (1995) Soldier (1998)
+1199668811 1 2322 -0.28 Toy Story (1995) Soldier (1998)
+qquueerryy ccaannddiiddaattee ddiissttaannccee qquueerryy__ttiittttllee rreeccoommmmeennddaattiioonn__ttiittllee
+11445511 1 160 -0.24 Toy Story (1995) Congo (1995)
+...... ... ... ... ... ...
+88554400 10 990 1.00 GoldenEye (1995) Maximum Risk (1996)
+1122882200 10 1499 1.00 GoldenEye (1995) Anaconda (1997)
+1133225500 10 1552 1.00 GoldenEye (1995) Con Air (1997)
+1144775500 10 1744 1.00 GoldenEye (1995) Firestorm (1998)
+3322445500 10 3755 1.00 GoldenEye (1995) Perfect Storm, The (2000)
+34270 rows × 5 columns
+CCSSRR MMaattrriixx
+In [71]:
+cmfrec.csr_matrix(np.array(m)).toarray()
+Out[71]:
+array([[0, 0, 1, ..., 0, 0, 0],
+[0, 1, 0, ..., 0, 0, 0],
+[0, 0, 0, ..., 0, 0, 0],
+...,
+[0, 0, 0, ..., 0, 0, 0],
+[0, 0, 0, ..., 0, 0, 0],
+[0, 0, 0, ..., 1, 0, 0]])
+In [72]:
+cmfrec.csr_matrix(np.array(m))
+Out[72]:
+<3428x18 sparse matrix of type '<class 'numpy.int64'>'
+with 5752 stored elements in Compressed Sparse Row format>
+CCSSRR MMaattrriixx EEnnddss
+CCoollllaabboorraattiivvee FFiilltteerriinngg ((IItteemm--bbaasseedd && UUsseerr--bbaasseedd AApppprrooaacchh))
+In [73]:
+ratings.head()
+Out[73]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss
+00 1 1193 5 978300760 2000-12-31 22
+11 1 661 3 978302109 2000-12-31 22
+22 1 914 3 978301968 2000-12-31 22
+22 1 914 3 978301968 2000-12-31 22
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss
+33 1 3408 4 978300275 2000-12-31 22
+44 1 2355 5 978824291 2001-06-01 23
+In [74]:
+rm = ratings.pivot(index = 'user_id', columns ='movie_id', values = 'rating').fillna(0)
+rm.astype(int).head()
+Out[74]:
+mmoovviiee__iidd 11 22 33 44 55 66 77 88 99 1100 ...... 33994433 33994444 33994455 33994466 33994477 33994488 33994499 33995500 33995511 33995522
+uusseerr__iidd
+11 5 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0
+22 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0
+33 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0
+44 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0
+55 0 0 0 0 0 2 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0
+5 rows × 3706 columns
+In [75]:
+rm_raw = ratings[['user_id', 'movie_id', 'rating']].copy()
+rm_raw.columns = ['UserId', 'ItemId', 'Rating'] # Lib requires specific column names
+rm_raw.head(2)
+Out[75]:
+UUsseerrIIdd IItteemmIIdd RRaattiinngg
+00 1 1193 5
+11 1 661 3
+In [76]:
+ffrroomm ccmmffrreecc iimmppoorrtt CMF
+In [77]:
+# from cmfrec import CMF
+model = CMF(k=3, lambda_=0.1, user_bias=False, item_bias=False, verbose=False)
+model.fit(rm_raw)
+Out[77]:
+Collective matrix factorization model
+(explicit-feedback variant)
+In [78]:
+model.A_.shape
+Out[78]:
+(6040, 3)
+In [79]:
+model.B_.shape
+Out[79]:
+(3706, 3)
+In [80]:
+In [80]:
+model.A_
+Out[80]:
+array([[-0.00958391, -0.17743202, 0.16195586],
+[-0.16286132, -0.3025382 , -0.37213776],
+[-0.08792485, -0.22111896, -0.04388591],
+...,
+[-0.14682147, -0.21881038, -0.24433388],
+[-0.17056152, -0.09411836, -0.11553887],
+[-0.3991945 , 0.24622837, -0.16886806]], dtype=float32)
+In [81]:
+cmfrec.csr_matrix(model.A_)
+Out[81]:
+<6040x3 sparse matrix of type '<class 'numpy.float32'>'
+with 18120 stored elements in Compressed Sparse Row format>
+In [82]:
+model.B_
+Out[82]:
+array([[-4.013367 , -1.4335079 , 1.2978806 ],
+[ 0.27379817, -0.48399982, 2.3520467 ],
+[-1.7438495 , -3.3851151 , 0.4928088 ],
+...,
+[ 0.9760184 , 1.8206757 , -1.9986285 ],
+[-0.37541583, -1.8747995 , -1.0537992 ],
+[-0.6224832 , 0.10011666, 0.19826597]], dtype=float32)
+In [83]:
+cmfrec.csr_matrix(model.B_)
+Out[83]:
+<3706x3 sparse matrix of type '<class 'numpy.float32'>'
+with 11118 stored elements in Compressed Sparse Row format>
+In [84]:
+top_items = model.topN(user=4, n=10)
+movies.loc[movies.movie_id.isin(top_items)]
+Out[84]:
+mmoovviiee__iidd ttiittllee ggeennrreess
+4499 50 Usual Suspects, The (1995) Crime|Thriller
+5522 53 Lamerica (1994) Drama
+773355 745 Close Shave, A (1995) Animation|Comedy|Thriller
+774400 750 Dr. Strangelove or: How I Learned to Stop Worr... Sci-Fi|War
+884477 858 Godfather, The (1972) Action|Crime|Drama
+991100 922 Sunset Blvd. (a.k.a. Sunset Boulevard) (1950) Film-Noir
+991111 923 Citizen Kane (1941) Drama
+11995500 2019 Seven Samurai (The Magnificent Seven) (Shichin... Action|Drama
+22883366 2905 Sanjuro (1962) Action|Adventure
+33226699 3338 For All Mankind (1989) Documentary
+EEvvaalluuaattiioonn ooff mmooddeell uussiinngg mmssee aanndd rrmmssee
+In [85]:
+ffrroomm sskklleeaarrnn..mmeettrriiccss iimmppoorrtt mean_squared_error aass mse
+ffrroomm sskklleeaarrnn..mmeettrriiccss iimmppoorrtt mean_absolute_percentage_error aass mape
+In [86]:
+rm__ = np.dot(model.A_, model.B_.T) + model.glob_mean_
+mse(rm.values[rm > 0], rm__[rm > 0])**0.5
+Out[86]:
+1.3321351755683746
+In [129]:
+np.sqrt(mse(rm.values[rm > 0], rm__[rm > 0]))
+Out[129]:
+1.3321351755683746
+In [130]:
+mape(rm.values[rm > 0], rm__[rm > 0])
+Out[130]:
+0.3796718211689346
+MMoovviiee RReeccoommmmeennddaattiioonnss oonn tthhee bbaassiiss ooff ppeeaarrssoonn ccoorrrreellaattiioonn
+In [89]:
+m1 = df2.groupby(['movie_id','genres'])['rating'].mean().unstack().reset_index().set_ind
+ex('movie_id').T.fillna(0)
+correlated_movie_matrix = m1.corr()
+correlated_movie_matrix
+Out[89]:
+mmoovviiee__iidd 11 22 33 44 55 66 77 88 99 1100 ...... 33994433 33994444 33994455 33994466 33994477 33994488 33994499 33995500 33995511 33995522
+mmoovviiee__iidd
+- - - - - - - - -
+11 1.00 0.20 0.31 0.33 0.54 0.30 0.29 ... 0.54 0.22 0.63 0.54
+0.20 0.11 0.20 0.20 0.11 0.11 0.11 0.11 0.16
+- - - - - - - - - - - - - - -
+22 0.20 1.00 0.79 0.20 ... 0.60
+0.16 0.16 0.11 0.20 0.16 0.11 0.11 0.15 0.20 0.11 0.11 0.11 0.11 0.11 0.16
+- - - - - - - - - - - -
+33 0.31 1.00 0.44 0.67 1.00 ... 0.67 0.31 0.67
+0.16 0.16 0.12 0.09 0.16 0.16 0.16 0.09 0.09 0.09 0.09 0.12
+- - - - - - -
+44 0.33 0.44 1.00 0.71 0.44 ... 0.71 0.97 0.33 0.71 0.66 0.66 0.66 0.42
+0.16 0.16 0.12 0.09 0.16 0.16 0.09
+- - - - - - - - - - - -
+55 0.54 0.67 0.71 1.00 0.67 ... 1.00 0.52 1.00
+0.11 0.11 0.09 0.06 0.11 0.11 0.11 0.06 0.06 0.06 0.06 0.09
+...... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...
+- - - - - - - - - - - -
+33994488 0.54 0.67 0.71 1.00 0.67 ... 1.00 0.52 1.00
+0.11 0.11 0.09 0.06 0.11 0.11 0.11 0.06 0.06 0.06 0.06 0.09
+- - - - - - - - - - - - -
+33994499 0.66 ... 0.82 0.58 1.00 1.00 1.00 0.69
+- - - - - - - - - - - - -
+33994499 0.66 ... 0.82 0.58 1.00 1.00 1.00 0.69
+mmoovviiee__iidd 0.1111 0.1221 0.0339 44 0.0556 0.1661 0.0779 0.0889 0.0996 0.111001 ...... 33099.404363 33994444 33099.414515 33994466 33099.404767 33099.404868 33994499 33995500 33995511 33995522
+mmoovviiee__iidd - - - - - - - - - - - - -
+33995500 0.66 ... 0.82 0.58 1.00 1.00 1.00 0.69
+0.11 0.11 0.09 0.06 0.11 0.09 0.09 0.06 0.11 0.06 0.11 0.06 0.06
+- - - - - - - - - - - - -
+33995511 0.66 ... 0.82 0.58 1.00 1.00 1.00 0.69
+0.11 0.11 0.09 0.06 0.11 0.09 0.09 0.06 0.11 0.06 0.11 0.06 0.06
+- - - - - - - - - -
+33995522 0.42 0.32 0.32 ... 0.54 0.81 0.69 0.69 0.69 0.69 1.00
+0.16 0.16 0.12 0.09 0.12 0.12 0.09 0.09 0.16 0.09
+3428 rows × 3428 columns
+In [90]:
+# correlated_movie_matrix.to_dict()
+In [91]:
+ddeeff recommend_movie_based_on_correlation(movie):
+TITLE = movies[movies.title.str.contains(movie)].iloc[0]["title"]
+INDEX = movies[movies.title.str.contains(movie)].iloc[0].movie_id
+pprriinntt(TITLE)
+pprriinntt(INDEX)
+# r = []
+# r.append((movies[movies.movie_id.isin(correlated_movie_matrix[INDEX].sort_values(as
+cending=False).head(10).index.to_list())]["title"]))
+rreettuurrnn movies[movies.movie_id.isin(correlated_movie_matrix[INDEX].sort_values(ascend
+ing=False).head(10).index.to_list())]["title"]
+# return r
+In [92]:
+d = recommend_movie_based_on_correlation('Braveheart')
+Braveheart (1995)
+110
+In [93]:
+d
+Out[93]:
+108 Braveheart (1995)
+1204 Full Metal Jacket (1987)
+1214 Boat, The (Das Boot) (1981)
+1222 Glory (1989)
+1545 G.I. Jane (1997)
+1959 Saving Private Ryan (1998)
+2358 Thin Red Line, The (1998)
+3559 Flying Tigers (1942)
+3585 Guns of Navarone, The (1961)
+3684 Patriot, The (2000)
+Name: title, dtype: object
+In [94]:
+type(recommend_movie_based_on_correlation('Toy Story'))
+Toy Story (1995)
+1
+Out[94]:
+pandas.core.series.Series
+In [95]:
+recommend_movie_based_on_correlation('Toy Story')
+Toy Story (1995)
+1
+Out[95]:
+0 Toy Story (1995)
+1050 Aladdin and the King of Thieves (1996)
+2033 Steamboat Willie (1940)
+2072 American Tail, An (1986)
+2073 American Tail: Fievel Goes West, An (1991)
+2285 Rugrats Movie, The (1998)
+2286 Bug's Life, A (1998)
+3542 Saludos Amigos (1943)
+3682 Chicken Run (2000)
+3685 Adventures of Rocky and Bullwinkle, The (2000)
+Name: title, dtype: object
+In [96]:
+# recommend_movie_based_on_correlation('Gladiator')
+In [97]:
+iimmppoorrtt ppiicckkllee
+In [98]:
+pickle.dump(movies,open('movie.pkl','wb'))
+In [99]:
+!cp ./movie.pkl /content/drive/MyDrive/Scaler/datasets
+In [100]:
+movies.head()
+Out[100]:
+mmoovviiee__iidd ttiittllee ggeennrreess
+00 1 Toy Story (1995) Animation|Children's|Comedy
+11 2 Jumanji (1995) Adventure|Children's|Fantasy
+22 3 Grumpier Old Men (1995) Comedy|Romance
+33 4 Waiting to Exhale (1995) Comedy|Drama
+Father of the Bride Part II
+44 5 Comedy
+(1995)
+In [101]:
+pickle.dump(movies.to_dict(),open('movie_dict.pkl','wb'))
+!cp ./movie_dict.pkl /content/drive/MyDrive/Scaler/datasets
+In [102]:
+pickle.dump(correlated_movie_matrix.to_dict(),open('correlated_movie_matrix.pkl','wb'))
+!cp ./correlated_movie_matrix.pkl /content/drive/MyDrive/Scaler/datasets
+In [103]:
+pickle.dump(df2[['title']].to_dict(),open('titles_.pkl','wb'))
+!cp ./titles_.pkl /content/drive/MyDrive/Scaler/datasets
+UUsseerrss ooff wwhhiicchh aaggee ggrroouupp hhaavvee wwaattcchheedd aanndd rraatteedd tthhee mmoosstt nnuummbbeerr ooff mmoovviieess??
+UUsseerrss ooff wwhhiicchh aaggee ggrroouupp hhaavvee wwaattcchheedd aanndd rraatteedd tthhee mmoosstt nnuummbbeerr ooff mmoovviieess??
+In [104]:
+Q1 = df2[['user_id','age','rating','movie_id']].reset_index().drop(['index'],axis=1)
+In [105]:
+# Most ratings by an agegroup
+plt.figure(figsize=(9,4))
+Q1.groupby(['age'])['rating'].count().sort_values(ascending=False).plot(kind='bar')
+plt.title('Most ratings by an age-group',fontsize=12,fontname='Comic Sans MS')
+plt.show()
+WARNING:matplotlib.font_manager:findfont: Font family ['Comic Sans MS'] not found. Fallin
+g back to DejaVu Sans.
+In [106]:
+# Age group that watched the most number of movies
+plt.figure(figsize=(9,4))
+Q1.groupby(['age'])['movie_id'].nunique().sort_values(ascending=False).plot(kind='bar')
+plt.title('Age group that watched the most number of movies',fontsize=12,fontname='Comic
+Sans MS')
+plt.show()
+UUsseerrss bbeelloonnggiinngg ttoo wwhhiicchh pprrooffeessssiioonn hhaavvee wwaattcchheedd aanndd rraatteedd tthhee mmoosstt mmoovviieess??
+In [107]:
+mapit = {0: "other", 1: "academic/educator" ,2: "artist" ,3: "clerical/admin" ,4: "colle
+ge/grad student" ,5: "customer service" ,6: "doctor/health care" ,7: "executive/manageri
+al" ,8: "farmer" ,9: "homemaker" ,10: "K-12 student" ,11: "lawyer" ,12: "programmer" ,13
+: "retired" ,14: "sales/marketing" ,15: "scientist" ,16: "self-employed" ,17: "technicia
+n/engineer" ,18: "tradesman/craftsman" ,19: "unemployed", 20: "writer"}
+df3['occupation'] = df3['occupation'].map(mapit)
+In [108]:
+# Most ratings by an agegroup
+plt.figure(figsize=(9,4))
+df3.groupby(['occupation'])['rating'].count().sort_values(ascending=False).plot(kind='ba
+r')
+plt.title(' Users belonging to which profession have rated the most movies',fontsize=12,f
+ontname='Comic Sans MS')
+plt.show()
+In [109]:
+df3
+Out[109]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess
+2000- Bonnie and
+111155554411 4956 1084 4 962638726 15 M 35 scientist 77007 Drama
+03-07 Clyde
+2000- Anna and
+336611339933 1873 3155 4 974740115 17 M 35 executive/managerial 2127 Romance
+11-20 the King
+2000- Princess
+66009988 502 1197 5 976210655 17 M 35 doctor/health care 55126 Adventure
+07-12 Bride, The
+2000-
+779922117711 3441 122 2 967308615 16 F 25 sales/marketing 94109 Boomerang Comedy
+08-26
+Star Trek:
+2002-
+447733006699 193 1374 3 1035342850 3 F 45 scientist 44106 The Wrath Sci-Fi
+10-23
+of Khan
+...... ... ... ... ... ... ... ... ... ... ... ... ...
+2000-
+226633555533 1944 1127 5 974692037 3 F 18 college/grad student 93107 Abyss, The Adventure
+11-20
+2000- Simply
+886655008844 2106 2491 2 975439895 19 F 18 writer 495321 Comedy
+11-28 Irresistible
+2000-
+227744221166 2581 3744 3 974065088 21 M 25 lawyer 60611 Shaft Crime
+12-11
+2002- Playing by
+886699666600 1755 2443 3 1037947827 6 F 18 college/grad student 77005 Romance
+11-22 Heart
+Spy Who
+2000-
+666699990033 2567 3635 3 973958742 16 M 25 other 6451 Loved Me, Action
+11-11
+The
+1000000 rows × 13 columns
+In [110]:
+# Age group that watched the most number of movies
+plt.figure(figsize=(9,4))
+df3.groupby(['occupation'])['movie_id'].nunique().sort_values(ascending=False).plot(kind
+='bar')
+plt.title(' Users belonging to which profession have watched the most movies',fontsize=12
+,fontname='Comic Sans MS')
+plt.show()
+In [111]:
+df3.head()
+Out[111]:
+uusseerr__iidd mmoovviiee__iidd rraattiinngg ttiimmeessttaammpp ddaattee hhoouurrss ggeennddeerr aaggee ooccccuuppaattiioonn zziipp__ccooddee ttiittllee ggeennrreess
+2000- Bonnie and
+111155554411 4956 1084 4 962638726 15 M 35 scientist 77007 Drama
+03-07 Clyde
+2000- Anna and
+336611339933 1873 3155 4 974740115 17 M 35 executive/managerial 2127 Romance
+11-20 the King
+2000- Princess
+66009988 502 1197 5 976210655 17 M 35 doctor/health care 55126 Adventure
+07-12 Bride, The
+2000-
+779922117711 3441 122 2 967308615 16 F 25 sales/marketing 94109 Boomerang Comedy
+08-26
+Star Trek:
+2002-
+447733006699 193 1374 3 1035342850 3 F 45 scientist 44106 The Wrath Sci-Fi
+10-23
+of Khan
+MMoosstt ooff tthhee uusseerrss iinn oouurr ddaattaasseett wwhhoo’’vvee rraatteedd tthhee mmoovviieess aarree MMaallee.. ((TT//FF))
+In [112]:
+plt.figure(figsize=(9,4))
+df3.groupby(['gender'])['rating'].count().plot(kind='bar')
+plt.title(' Most users who’ve rated the movies are Male is a true statement',fontsize=12,
+fontname='Comic Sans MS')
+plt.show()
+MMoosstt ooff tthhee mmoovviieess pprreesseenntt iinn oouurr ddaattaasseett wweerree rreelleeaasseedd iinn wwhhiicchh ddeeccaaddee??
+70s b. 90s c. 50s d.80s
+In [113]:
+n = df3.groupby(['release_year'])['movie_id'].nunique().sort_values(ascending=False).res
+et_index()
+In [114]:
+bins = [1920,1930,1940,1950,1960,1970,1980,1990,2000,2010]
+label = ['20s','30s','40s','50s','60s','70s','80s','90s','100s']
+n['release_year_'] = pd.cut(n['release_year'],bins,labels=label)
+In [115]:
+plt.figure(figsize=(9,4))
+n.groupby('release_year_')['movie_id'].sum().plot(kind='bar')
+plt.title('Decade with highest movies releases',fontsize=12,fontname='Comic Sans MS')
+plt.show()
+TThhee mmoovviiee wwiitthh mmaaxxiimmuumm nnoo.. ooff rraattiinnggss iiss ______..
+In [125]:
+df3.groupby("title")["rating"].count().reset_index().sort_values(by="rating",ascending=F
+alse).set_index('title').head(10).plot(kind='bar',figsize=(9,4))
+plt.title('TOP 10 movies with most number of ratings',fontsize=12,fontname='Comic Sans MS
+')
+plt.show()
+NNaammee tthhee ttoopp 33 mmoovviieess ssiimmiillaarr ttoo ‘‘LLiiaarr LLiiaarr’’ oonn tthhee iitteemm--bbaasseedd aapppprrooaacchh..
+In [128]:
+recommend_movie_based_on_correlation('Liar Liar')[:3]
+Liar Liar (1997)
+1485
+Out[128]:
+117 Steal Big, Steal Little (1995)
+407 You So Crazy (1994)
+658 Faithful (1996)
+Name: title, dtype: object
+OOnn tthhee bbaassiiss ooff aapppprrooaacchh,, CCoollllaabboorraattiivvee FFiilltteerriinngg mmeetthhooddss ccaann bbee ccllaassssiiffiieedd iinnttoo-- bbaasseedd aanndd
+--bbaasseedd..
+IITTEEMM--IITTEEMM BBAASSEEDD AANNDD UUSSEERR--UUSSEERR BBAASSEEDD
+PPeeaarrssoonn CCoorrrreellaattiioonn rraannggeess bbeettwweeeenn ttoo wwhheerreeaass,, CCoossiinnee SSiimmiillaarriittyy bbeelloonnggss ttoo tthhee iinntteerrvvaall
+bbeettwweeeenn ttoo ..
+bbeettwweeeenn ttoo ..
+PPeeaarrssoonn CCoorrrreellaattiioonn rraannggeess ffrroomm --11 ttoo 11,, wwhheerreeaass CCoossiinnee SSiimmiillaarriittyy rraannggeess ffrroomm 00 ttoo 11..
+MMeennttiioonn tthhee RRMMSSEE aanndd MMAAPPEE tthhaatt yyoouu ggoott wwhhiillee eevvaalluuaattiinngg tthhee MMaattrriixx FFaaccttoorriizzaattiioonn
+mmooddeell..
+In [131]:
+pprriinntt('MAPE : ',mape(rm.values[rm > 0], rm__[rm > 0]),'\\nn')
+pprriinntt('RMSE :',np.sqrt(mse(rm.values[rm > 0], rm__[rm > 0])))
+MAPE : 0.3796718211689346
+RMSE : 1.3321351755683746
+GGiivvee tthhee ssppaarrssee ‘‘rrooww’’ mmaattrriixx rreepprreesseennttaattiioonn ffoorr tthhee ffoolllloowwiinngg ddeennssee mmaattrriixx --
+[[1 0] [3 7]]
+In [132]:
+iimmppoorrtt nnuummppyy aass nnpp
+ffrroomm sscciippyy..ssppaarrssee iimmppoorrtt coo_matrix
+dense_matrix = np.array([[1, 0], [3, 7]])
+sparse_matrix = coo_matrix(dense_matrix)
+pprriinntt(sparse_matrix)
+(0, 0) 1
+(1, 0) 3
+(1, 1) 7
+In [ ]:
+55 TToopp rraatteedd RReeccoommmmeennddeedd MMoovviieess aass ppeerr aaggee ::
+In [142]:
+age_groups = df3.age.unique()
+In [143]:
+ffoorr age_ iinn age_groups:
+pprriinntt(age_)
+pprriinntt("------")
+pprriinntt(df3[df3.age == age_].groupby("title")["rating"].count().sort_values(ascending=Fa
+lse).head())
+pprriinntt()
+pprriinntt()
+pprriinntt()
+35
+------
+title
+Star Wars: Episode V - The Empire Strikes Back 1539
+Star Wars: Episode V - The Empire Strikes Back 1539
+Star Wars: Episode VI - Return of the Jedi 1381
+Star Wars: Episode IV - A New Hope 1269
+Men in Black 1008
+E.T. the Extra-Terrestrial 967
+Name: rating, dtype: int64
+25
+------
+title
+Star Wars: Episode V - The Empire Strikes Back 2975
+Star Wars: Episode VI - Return of the Jedi 2932
+Star Wars: Episode IV - A New Hope 2318
+Princess Bride, The 2008
+Men in Black 1972
+Name: rating, dtype: int64
+45
+------
+title
+Star Wars: Episode V - The Empire Strikes Back 568
+Star Wars: Episode VI - Return of the Jedi 545
+Star Wars: Episode IV - A New Hope 485
+E.T. the Extra-Terrestrial 406
+L.A. Confidential 399
+Name: rating, dtype: int64
+18
+------
+title
+Star Wars: Episode VI - Return of the Jedi 1513
+Star Wars: Episode V - The Empire Strikes Back 1468
+Star Wars: Episode IV - A New Hope 1171
+Star Wars: Episode I - The Phantom Menace 1065
+Men in Black 1005
+Name: rating, dtype: int64
+56
+------
+title
+Star Wars: Episode V - The Empire Strikes Back 289
+Star Wars: Episode VI - Return of the Jedi 259
+L.A. Confidential 258
+Star Wars: Episode IV - A New Hope 237
+African Queen, The 202
+Name: rating, dtype: int64
+50
+------
+title
+Star Wars: Episode V - The Empire Strikes Back 543
+Star Wars: Episode VI - Return of the Jedi 516
+Star Wars: Episode IV - A New Hope 440
+Men in Black 391
+L.A. Confidential 382
+Name: rating, dtype: int64
+In [ ]:
+QQuueessttiioonnss aanndd AAnnsswweerrss ::
+11)) UUsseerrss ooff wwhhiicchh aaggee ggrroouupp hhaavvee wwaattcchheedd aanndd rraatteedd tthhee mmoosstt nnuummbbeerr ooff mmoovviieess??
+aaggee ggrroouupp 2255--3355
+22)) UUsseerrss bbeelloonnggiinngg ttoo wwhhiicchh pprrooffeessssiioonn hhaavvee wwaattcchheedd aanndd rraatteedd tthhee mmoosstt mmoovviieess??
+CCoolllleeggee GGrraadduuaattee SSttuuddeennttss aanndd OOtthheerr ccaatteeggoorryy
+33)) MMoosstt ooff tthhee uusseerrss iinn oouurr ddaattaasseett wwhhoo’’vvee rraatteedd tthhee mmoovviieess aarree MMaallee.. ((TT//FF))
+MMaallee((TTrruuee))
+44)) MMoosstt ooff tthhee mmoovviieess pprreesseenntt iinn oouurr ddaattaasseett wweerree rreelleeaasseedd iinn wwhhiicchh ddeeccaaddee??
+9900ss
+55)) TThhee mmoovviiee wwiitthh mmaaxxiimmuumm nnoo.. ooff rraattiinnggss iiss ______..
+SSttaarr WWaarrss:: EEppiissooddee VV -- TThhee EEmmppiirree SSttrriikkeess BBaacckk
+66)) NNaammee tthhee ttoopp 33 mmoovviieess ssiimmiillaarr ttoo ‘‘LLiiaarr LLiiaarr’’ oonn tthhee iitteemm--bbaasseedd aapppprrooaacchh..
+- SStteeaall BBiigg,, SStteeaall LLiittttllee ((11999955))
+- YYoouu SSoo CCrraazzyy ((11999944))
+- FFaaiitthhffuull ((11999966))
+77)) OOnn tthhee bbaassiiss ooff aapppprrooaacchh,, CCoollllaabboorraattiivvee FFiilltteerriinngg mmeetthhooddss ccaann bbee ccllaassssiiffiieedd iinnttoo --bbaasseedd aanndd --bbaasseedd..
+iitteemm aanndd UUsseerr
+88)) PPeeaarrssoonn CCoorrrreellaattiioonn rraannggeess bbeettwweeeenn ttoo wwhheerreeaass,, CCoossiinnee SSiimmiillaarriittyy bbeelloonnggss ttoo tthhee iinntteerrvvaall bbeettwweeeenn ttoo ..
+- PPeeaarrssoonn CCoorrrreellaattiioonn rraannggeess bbeettwweeeenn --11 ttoo ++11
+- CCoossiinnee SSiimmiillaarriittyy bbeelloonnggss ttoo tthhee iinntteerrvvaall bbeettwweeeenn 00 ttoo 11
+99)) MMeennttiioonn tthhee RRMMSSEE aanndd MMAAPPEE tthhaatt yyoouu ggoott wwhhiillee eevvaalluuaattiinngg tthhee MMaattrriixx FFaaccttoorriizzaattiioonn mmooddeell..
+UUsseerr--bbaasseedd MMooddeell ::
+- MAPE : 0.3796718211689346
+- RMSE : 1.3321351755683746
+1100)) GGiivvee tthhee ssppaarrssee ‘‘rrooww’’ mmaattrriixx rreepprreesseennttaattiioonn ffoorr tthhee ffoolllloowwiinngg ddeennssee mmaattrriixx --
+[[[[11 00]],,[[33 77]]]]
+ans : (0, 0) 1 (1, 0) 3 (1, 1) 7

@@ -1,0 +1,11 @@
+# Ignore all log files
+*.log
+
+# Ignore PID files
+*.pid
+
+# Keep the README
+!README.md
+
+# Keep the directory structure
+!.gitignore
